@@ -1,0 +1,51 @@
+; Copyright (c) uib gmbh (www.uib.de)
+; This sourcecode is owned by uib gmbh
+; and published under the Terms of the General Public License.
+; credits: http://www.opsi.org/en/credits/
+
+include_append "%ScriptPath%\check_msi_exitcode.opsiscript"
+
+DefVar $found$
+DefVar $UninstallProgram$
+
+Set $found$     = "false"
+Set $MsiId$     = '{}'
+
+Message "Uninstalling " + $ProductId$ + " ..."
+   ;----------------------------------------------
+   ; check for possible efi boot
+   ;----------------------------------------------
+   DosInAnIcon_check_efi
+   comment "get the exit code"
+   set $ExitCode$ = getLastExitCode
+   set $ErrorMsg$ = ""
+   if ($ExitCode$ = "0")
+	   comment "BIOS Boot - change bootscreen."
+   else
+   	   comment "UEFI Boot - cannot change bootscreen."
+   	   set $ErrorMsg$ = "ExitCode = "+$ExitCode$+" UEFI Booloader detected. The boot logo cannot be changed."
+   	   logError $ErrorMsg$
+	   isFatalError "UEFI Booloader"
+   endif
+
+   comment "Restore previous bootloader (if any)"
+   Winbatch_uninstall
+   sub_check_exitcode
+
+
+   if (not($InstallDir$ = '')) and (not($InstallDir$ = "(not used)"))
+      Files_uninstall
+   endif
+
+;-----------------------------------------------------
+[Winbatch_uninstall]
+"%ScriptPath%\Win7BootUpdaterCmd2.exe" /restore
+;-----------------------------------------------------
+[DosInAnIcon_check_efi]
+bcdedit | findstr "inload.exe"
+echo %ERRORLEVEL%
+exit %ERRORLEVEL%
+; ----------------------------------------------------------------
+[Files_uninstall]
+del -sf "$InstallDir$\"
+;-----------------------------------------------------

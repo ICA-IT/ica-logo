@@ -1,0 +1,118 @@
+; ----------------------------------------------------------------
+; Copyright (c) uib gmbh (www.uib.de)
+; This sourcecode is owned by uib
+; and published under the Terms of the General Public License.
+; credits: http://www.opsi.org/en/credits/
+; ----------------------------------------------------------------
+
+;****************************************
+; SETUPTYPE      custom exe
+;****************************************
+; PRODUCTID      ica-logo
+; SETUPFILE      Win7BootUpdaterCmd2.exe
+;****************************************
+; LICENSE        false     
+; PRODUCTDESC    Install the ICA Boot screen
+
+; PRODUCTNAME    ica-logo
+; PRODUCTSIZE    20 MB
+; PRODUCTVER     1.0
+;****************************************
+; SETUPSCRIPT    setup.opsiscript
+; UNINSSCRIPT    uninstall.opsiscript
+;****************************************
+; MSIID          {}
+; USE-MST        
+; INSTALLDIR     (not used)
+;****************************************
+; TIMESTAMP      5/9/2019 13:33:26
+;****************************************
+
+[Actions]
+requiredWinstVersion >= "4.11.4.3"
+ScriptErrorMessages = false
+
+DefVar $SetupType$
+DefVar $ProductId$ 
+DefVar $Setupfile$ 
+DefVar $InstallDir$
+DefVar $MinimumSpace$
+DefVar $ExitCode$
+DefVar $ErrorMsg$
+DefVar $LicenseRequired$
+DefVar $LicenseKey$
+DefVar $LicensePool$
+DefVar $MsiId$
+DefVar $NsisInstallBatch$
+DefVar $LogDir$
+
+Set $LogDir$ = "%opsiLogDir%"
+
+include_append "%ScriptPath%\check_msi_exitcode.opsiscript"
+
+; ----------------------------------------------------------------
+Set $SetupType$       = ""
+; ----------------------------------------------------------------
+
+; $ProductId$ is the name of the product in opsi, only lower letters, no umlauts, no white spaces, use '-' as a seperator
+Set $ProductId$       = "ica-logo"
+Set $Setupfile$       = "Win7BootUpdaterCmd2.exe"
+; the path where we find the product after the installation
+Set $InstallDir$      = "(not used)"
+Set $LicenseRequired$ = "false"
+Set $LicensePool$     = "p_" + $ProductId$
+Set $MsiId$           = "{}"
+Set $MinimumSpace$    = "20 MB"
+; ----------------------------------------------------------------
+; ----------------------------------------------------------------
+
+if not(HasMinimumSpace ("%SystemDrive%", $MinimumSpace$))
+   LogError "Not enough space on %SystemDrive%, " + $MinimumSpace$ + " on drive %SystemDrive% needed for " + $ProductId$
+   isFatalError "No Space"
+   ; Stop process and set installation status to failed
+else
+   comment "Show product picture"
+   ShowBitmap "%ScriptPath%\" + $ProductId$ + ".png" $ProductId$
+
+   if FileExists("%ScriptPath%\delsub.opsiscript")
+      comment "Start uninstall sub section"
+      Sub "%ScriptPath%\delsub.opsiscript"
+   endif
+   
+   Message "Installing " + $ProductId$ + " ..."
+     
+   comment "Start setup program"
+   ChangeDirectory "%SCRIPTPATH%"
+   ;----------------------------------------------
+   ; check for possible efi boot
+   ;----------------------------------------------
+   DosInAnIcon_check_efi
+   comment "get the exit code"
+   set $ExitCode$ = getLastExitCode
+   set $ErrorMsg$ = ""
+   if ($ExitCode$ = "0")
+	   comment "BIOS Boot - change bootscreen."
+   else
+   	   comment "UEFI Boot - cannot change bootscreen."
+   	   set $ErrorMsg$ = "ExitCode = "+$ExitCode$+" UEFI Booloader detected. The boot logo cannot be changed."
+   	   logError $ErrorMsg$
+	   isFatalError "UEFI Booloader"
+   endif
+   Winbatch_install
+   ;----------------------------------------------
+   Sub_check_exitcode	
+endif
+
+
+; ----------------------------------------------------------------
+; install section
+; ----------------------------------------------------------------
+
+[Winbatch_install]
+"%ScriptPath%\Win7BootUpdaterCmd2.exe" "%ScriptPath%\ICA.bs7"
+; ----------------------------------------------------------------
+[DosInAnIcon_check_efi]
+bcdedit | findstr "inload.exe"   
+; ----------------------------------------------------------------
+; ----------------------------------------------------------------
+
