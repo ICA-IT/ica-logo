@@ -1,14 +1,12 @@
 [Package]
 version: 1
 depends: 
-incremental: False
 
 [Product]
 type: localboot
 id: ica-logo
 name: ica-logo
 description: Install the ICA Boot screen
-
 advice: 
 version: 1.0
 priority: 0
@@ -20,7 +18,7 @@ updateScript:
 alwaysScript: 
 onceScript: 
 customScript: 
-userLoginScript:
+userLoginScript: 
 
 [Changelog]
 ica-logo (1.0-1) stable; urgency=low
