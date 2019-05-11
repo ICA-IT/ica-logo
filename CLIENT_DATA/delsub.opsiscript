@@ -42,7 +42,8 @@ Message "Uninstalling " + $ProductId$ + " ..."
 "%ScriptPath%\Win7BootUpdaterCmd2.exe" /restore
 ;-----------------------------------------------------
 [DosInAnIcon_check_efi]
-bcdedit | findstr "inload.exe"
+;bcdedit | findstr "inload.exe"
+type C:\Windows\Panther\setupact.log  | findstr "Callback_BootEnvironmentDetect" | findstr "Detected boot environment" | findstr "BIOS"
 echo %ERRORLEVEL%
 exit %ERRORLEVEL%
 ; ----------------------------------------------------------------
